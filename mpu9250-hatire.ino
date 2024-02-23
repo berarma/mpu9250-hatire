@@ -1,5 +1,6 @@
 // MIT License
 // 
+// Copyright (c) 2018 Hideaki Tai
 // Copyright (c) 2022 Bernat Arlandis Mañó
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,17 +21,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <EEPROM.h>
 #include "MPU9250.h" // Use hideakitai library (https://github.com/hideakitai/MPU9250)
 
 // Mag. declination for your country http://www.magnetic-declination.com
 // Convert to decimal degrees: degrees + (minutes / 60).
 const float magnetic_declination = 0.97;
-
-// Run the calibration code from the MPU9250 library on the Arduino and follow
-// the instructions in the serial terminal. Copy the resulting values here:
-const float gyro_bias[3] = {-0.78, 0.10, -0.15};
-const float mag_bias[3] = {226.56, 232.71, 277.39};
-const float mag_scale[3] = {0.96, 1.00, 1.05};
 
 // Maximum update rate
 const int rate = 100;
@@ -46,6 +42,80 @@ struct  {
     int16_t  end;      // Footer frame (2 bytes)
 } hat;
 
+const uint8_t EEPROM_SIZE = 1 + sizeof(float) * 3 * 4;
+
+enum EEP_ADDR {
+    EEP_CALIB_FLAG = 0x00,
+    EEP_ACC_BIAS = 0x01,
+    EEP_GYRO_BIAS = 0x0D,
+    EEP_MAG_BIAS = 0x19,
+    EEP_MAG_SCALE = 0x25
+};
+
+void writeByte(int address, byte value) {
+    EEPROM.put(address, value);
+}
+
+void writeFloat(int address, float value) {
+    EEPROM.put(address, value);
+}
+
+byte readByte(int address) {
+    byte valueIn = 0;
+    EEPROM.get(address, valueIn);
+    return valueIn;
+}
+
+float readFloat(int address) {
+    float valueIn = 0;
+    EEPROM.get(address, valueIn);
+    return valueIn;
+}
+
+bool isCalibrated() {
+    return (readByte(EEP_CALIB_FLAG) == 0x01);
+}
+
+void saveCalibration() {
+    writeByte(EEP_CALIB_FLAG, 1);
+    writeFloat(EEP_ACC_BIAS + 0, mpu.getAccBias(0));
+    writeFloat(EEP_ACC_BIAS + 4, mpu.getAccBias(1));
+    writeFloat(EEP_ACC_BIAS + 8, mpu.getAccBias(2));
+    writeFloat(EEP_GYRO_BIAS + 0, mpu.getGyroBias(0));
+    writeFloat(EEP_GYRO_BIAS + 4, mpu.getGyroBias(1));
+    writeFloat(EEP_GYRO_BIAS + 8, mpu.getGyroBias(2));
+    writeFloat(EEP_MAG_BIAS + 0, mpu.getMagBias(0));
+    writeFloat(EEP_MAG_BIAS + 4, mpu.getMagBias(1));
+    writeFloat(EEP_MAG_BIAS + 8, mpu.getMagBias(2));
+    writeFloat(EEP_MAG_SCALE + 0, mpu.getMagScale(0));
+    writeFloat(EEP_MAG_SCALE + 4, mpu.getMagScale(1));
+    writeFloat(EEP_MAG_SCALE + 8, mpu.getMagScale(2));
+#if defined(ESP_PLATFORM) || defined(ESP8266)
+    EEPROM.commit();
+#endif
+}
+
+void loadCalibration() {
+    if (isCalibrated()) {
+        mpu.setAccBias(
+            readFloat(EEP_ACC_BIAS + 0),
+            readFloat(EEP_ACC_BIAS + 4),
+            readFloat(EEP_ACC_BIAS + 8));
+        mpu.setGyroBias(
+            readFloat(EEP_GYRO_BIAS + 0),
+            readFloat(EEP_GYRO_BIAS + 4),
+            readFloat(EEP_GYRO_BIAS + 8));
+        mpu.setMagBias(
+            readFloat(EEP_MAG_BIAS + 0),
+            readFloat(EEP_MAG_BIAS + 4),
+            readFloat(EEP_MAG_BIAS + 8));
+        mpu.setMagScale(
+            readFloat(EEP_MAG_SCALE + 0),
+            readFloat(EEP_MAG_SCALE + 4),
+            readFloat(EEP_MAG_SCALE + 8));
+    }
+}
+
 void setup()
 {
     // Init serial port
@@ -57,10 +127,15 @@ void setup()
 
     // Setup MPU9250
     mpu.setup(0x68);
+
+#if defined(ESP_PLATFORM) || defined(ESP8266)
+    EEPROM.begin(0x80);
+#endif
+
     mpu.setMagneticDeclination(magnetic_declination);
-    mpu.setGyroBias(gyro_bias[0], gyro_bias[1], gyro_bias[2]);
-    mpu.setMagBias(mag_bias[0], mag_bias[1], mag_bias[2]);
-    mpu.setMagScale(mag_scale[0], mag_scale[1], mag_scale[2]);
+
+    // load from eeprom
+    loadCalibration();
 
     // Init Hatire struct
     hat.begin = 0xAAAA;
@@ -71,8 +146,35 @@ void setup()
     while (!Serial);
 }
 
+void calibrate()
+{
+    Serial.println();
+    Serial.println("START");
+    Serial.println("Please leave the device still.");
+    delay(2000);
+    mpu.calibrateAccelGyro();
+
+    Serial.println("Please wave device in a figure eight until done.");
+    delay(2000);
+    mpu.calibrateMag();
+
+    Serial.println("DONE");
+
+    // save to eeprom
+    saveCalibration();
+}
+
 void loop()
 {
+    char input;
+
+    if (Serial.available()) {
+      input = Serial.read();
+      if (input == 'c') {
+        calibrate();
+      }
+    }
+
     if (mpu.update()) {
         static uint32_t last = millis();
         uint32_t now = millis();
