@@ -33,7 +33,7 @@ const float mag_bias[3] = {226.56, 232.71, 277.39};
 const float mag_scale[3] = {0.96, 1.00, 1.05};
 
 // Maximum update rate
-const int rate = 30;
+const int rate = 100;
 
 MPU9250 mpu;
 
