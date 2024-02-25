@@ -24,6 +24,7 @@
 #include <EEPROM.h>
 #include "MPU9250.h" // Use hideakitai library (https://github.com/hideakitai/MPU9250)
 
+#define DEBUG true
 #define EEPROM_OFFSET 0
 
 // Maximum update rate
@@ -106,6 +107,37 @@ void loadCalibration() {
     }
 }
 
+#if DEBUG
+void print_calibration()
+{
+    Serial.println("< calibration parameters >");
+    Serial.print(mpu.getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
+    Serial.print(", ");
+    Serial.print(mpu.getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
+    Serial.print(", ");
+    Serial.print(mpu.getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
+    Serial.println();
+    Serial.print(mpu.getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
+    Serial.print(", ");
+    Serial.print(mpu.getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
+    Serial.print(", ");
+    Serial.print(mpu.getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
+    Serial.println();
+    Serial.print(mpu.getMagBiasX());
+    Serial.print(", ");
+    Serial.print(mpu.getMagBiasY());
+    Serial.print(", ");
+    Serial.print(mpu.getMagBiasZ());
+    Serial.println();
+    Serial.print(mpu.getMagScaleX());
+    Serial.print(", ");
+    Serial.print(mpu.getMagScaleY());
+    Serial.print(", ");
+    Serial.print(mpu.getMagScaleZ());
+    Serial.println();
+}
+#endif
+
 void setup()
 {
     // Init serial port
@@ -132,6 +164,10 @@ void setup()
 
     // Wait for serial port ready
     while (!Serial);
+
+    #if DEBUG
+    print_calibration();
+    #endif
 }
 
 void calibrate()
@@ -145,6 +181,10 @@ void calibrate()
     Serial.println("Please wave device in a figure eight until done.");
     delay(2000);
     mpu.calibrateMag();
+
+    #if DEBUG
+    print_calibration();
+    #endif
 
     Serial.println("DONE");
 
