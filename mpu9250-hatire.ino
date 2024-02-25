@@ -24,10 +24,6 @@
 #include <EEPROM.h>
 #include "MPU9250.h" // Use hideakitai library (https://github.com/hideakitai/MPU9250)
 
-// Mag. declination for your country http://www.magnetic-declination.com
-// Convert to decimal degrees: degrees + (minutes / 60).
-const float magnetic_declination = 0.97;
-
 #define EEPROM_OFFSET 0
 
 // Maximum update rate
@@ -54,14 +50,6 @@ enum EEP_ADDR {
     EEP_MAG_SCALE  = EEPROM_OFFSET + 0x25
 };
 
-void writeByte(int address, byte value) {
-    EEPROM.put(address, value);
-}
-
-void writeFloat(int address, float value) {
-    EEPROM.put(address, value);
-}
-
 byte readByte(int address) {
     byte valueIn = 0;
     EEPROM.get(address, valueIn);
@@ -79,19 +67,19 @@ bool isCalibrated() {
 }
 
 void saveCalibration() {
-    writeByte(EEP_CALIB_FLAG, 1);
-    writeFloat(EEP_ACC_BIAS + 0, mpu.getAccBias(0));
-    writeFloat(EEP_ACC_BIAS + 4, mpu.getAccBias(1));
-    writeFloat(EEP_ACC_BIAS + 8, mpu.getAccBias(2));
-    writeFloat(EEP_GYRO_BIAS + 0, mpu.getGyroBias(0));
-    writeFloat(EEP_GYRO_BIAS + 4, mpu.getGyroBias(1));
-    writeFloat(EEP_GYRO_BIAS + 8, mpu.getGyroBias(2));
-    writeFloat(EEP_MAG_BIAS + 0, mpu.getMagBias(0));
-    writeFloat(EEP_MAG_BIAS + 4, mpu.getMagBias(1));
-    writeFloat(EEP_MAG_BIAS + 8, mpu.getMagBias(2));
-    writeFloat(EEP_MAG_SCALE + 0, mpu.getMagScale(0));
-    writeFloat(EEP_MAG_SCALE + 4, mpu.getMagScale(1));
-    writeFloat(EEP_MAG_SCALE + 8, mpu.getMagScale(2));
+    EEPROM.put(EEP_CALIB_FLAG, 1);
+    EEPROM.put(EEP_ACC_BIAS + 0, mpu.getAccBias(0));
+    EEPROM.put(EEP_ACC_BIAS + 4, mpu.getAccBias(1));
+    EEPROM.put(EEP_ACC_BIAS + 8, mpu.getAccBias(2));
+    EEPROM.put(EEP_GYRO_BIAS + 0, mpu.getGyroBias(0));
+    EEPROM.put(EEP_GYRO_BIAS + 4, mpu.getGyroBias(1));
+    EEPROM.put(EEP_GYRO_BIAS + 8, mpu.getGyroBias(2));
+    EEPROM.put(EEP_MAG_BIAS + 0, mpu.getMagBias(0));
+    EEPROM.put(EEP_MAG_BIAS + 4, mpu.getMagBias(1));
+    EEPROM.put(EEP_MAG_BIAS + 8, mpu.getMagBias(2));
+    EEPROM.put(EEP_MAG_SCALE + 0, mpu.getMagScale(0));
+    EEPROM.put(EEP_MAG_SCALE + 4, mpu.getMagScale(1));
+    EEPROM.put(EEP_MAG_SCALE + 8, mpu.getMagScale(2));
 #if defined(ESP_PLATFORM) || defined(ESP8266)
     EEPROM.commit();
 #endif
@@ -134,8 +122,6 @@ void setup()
     EEPROM.begin(0x80);
 #endif
 
-    mpu.setMagneticDeclination(magnetic_declination);
-
     // load from eeprom
     loadCalibration();
 
@@ -168,9 +154,8 @@ void calibrate()
 
 void loop()
 {
-    char input;
-
     if (Serial.available()) {
+      char input;
       input = Serial.read();
       if (input == 'c') {
         calibrate();
