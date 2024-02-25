@@ -26,9 +26,7 @@
 
 #define DEBUG true
 #define EEPROM_OFFSET 0
-
-// Maximum update rate
-const int rate = 100;
+#define UPDATE_RATE 100
 
 MPU9250 mpu;
 
@@ -205,7 +203,7 @@ void loop()
     if (mpu.update()) {
         static uint32_t last = millis();
         uint32_t now = millis();
-        if ((now - last - 1000 / rate) >= 0) {
+        if ((now - last - 1000 / UPDATE_RATE) >= 0) {
             hat.gyro[0] = mpu.getYaw();
             hat.gyro[1] = mpu.getPitch();
             hat.gyro[2] = mpu.getRoll();
