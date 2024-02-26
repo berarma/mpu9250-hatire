@@ -15,12 +15,11 @@ Required connections:
 |--------|--------|
 |VCC     |VCC     |
 |GND     |GND     |
-|SDA[^1] |SDA     |
-|SCL[^2] |SCL     |
-|GND     |ADO     |
+|SDA     |SDA     |
+|SCL     |SCL     |
+|GND     |AD0     |
 
-[^1]: Pin 2 in Arduino Pro Micro
-[^2]: Pin 3 in Arduino Pro Micro
+In the Arduino Pro Micro, SDA is pin 2 and SCL is pin 3.
 
 ## Software
 
@@ -49,7 +48,7 @@ The calibration process can be started by sending a "c" character to the
 serial port. The device will answer with instructions.
 
 A Bash script called `calibrate.sh` is included to trigger the calibration
-process. Run with the device as parameter (optioinal) and follow the
+process. Run with the device as parameter (optional) and follow the
 instructions in the terminal.
 
 ## Contributing

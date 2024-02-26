@@ -163,9 +163,9 @@ void setup()
     // Wait for serial port ready
     while (!Serial);
 
-    #if DEBUG
+#if DEBUG
     print_calibration();
-    #endif
+#endif
 }
 
 void calibrate()
@@ -180,9 +180,9 @@ void calibrate()
     delay(2000);
     mpu.calibrateMag();
 
-    #if DEBUG
+#if DEBUG
     print_calibration();
-    #endif
+#endif
 
     Serial.println("DONE");
 
@@ -193,11 +193,11 @@ void calibrate()
 void loop()
 {
     if (Serial.available()) {
-      char input;
-      input = Serial.read();
-      if (input == 'c') {
-        calibrate();
-      }
+        char input;
+        input = Serial.read();
+        if (input == 'c') {
+            calibrate();
+        }
     }
 
     if (mpu.update()) {
