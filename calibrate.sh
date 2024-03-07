@@ -14,8 +14,11 @@ then
     exit 1
 fi
 
+echo "Sending calibration request..."
+echo -e "Device response:\n"
+
 {
-    echo "c" > $TTY
+    echo -n -e "c\r" > $TTY
     while [ "$line" != $'START\r' ];
     do
         read line
