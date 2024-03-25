@@ -18,12 +18,12 @@ echo "Sending calibration request..."
 echo -e "Device response:\n"
 
 {
-    echo -n -e "c\r" > $TTY
-    while [ "$line" != $'START\r' ];
+    echo -ne "c\r" > $TTY
+    while [ "$line" != "START" ];
     do
         read line
     done
-    while [ "$line" != $'DONE\r' ];
+    while [ "$line" != "DONE" ];
     do
         read line
         echo $line
